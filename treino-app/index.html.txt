@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>J.A.R.V.I.S. Fitness System</title>
+  <style>
+    :root {
+      --bg-color: #0b0f19;
+      --card-bg: #111827;
+      --cyan-glow: #00f0ff;
+      --cyan-dim: #008b9b;
+      --text-color: #e2e8f0;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    header h1 {
+      color: var(--cyan-glow);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-size: 1.8rem;
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+    }
+
+    /* ARC REACTOR / ASSISTENTE DE VOZ */
+    .jarvis-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .arc-reactor {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 4px solid var(--cyan-glow);
+      box-shadow: 0 0 20px var(--cyan-glow), inset 0 0 15px var(--cyan-glow);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .arc-reactor.listening {
+      border-color: #38ef7d;
+      box-shadow: 0 0 35px #38ef7d, inset 0 0 20px #38ef7d;
+      animation: pulse 1.2s infinite alternate;
+    }
+
+    .arc-reactor.speaking {
+      border-color: #f39c12;
+      box-shadow: 0 0 35px #f39c12, inset 0 0 20px #f39c12;
+    }
+
+    .arc-inner {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: rgba(0, 240, 255, 0.2);
+      border: 2px dashed var(--cyan-glow);
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.08); }
+    }
+
+    .status-text {
+      margin-top: 15px;
+      font-size: 0.9rem;
+      color: var(--cyan-glow);
+      text-align: center;
+      min-height: 24px;
+    }
+
+    /* CARDS E DASHBOARD */
+    .dashboard {
+      width: 100%;
+      max-width: 600px;
+      display: grid;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+
+    .card h2 {
+      font-size: 1.1rem;
+      color: var(--cyan-glow);
+      margin-bottom: 15px;
+      border-bottom: 1px solid rgba(0,240,255,0.1);
+      padding-bottom: 8px;
+    }
+
+    /* FORMULÁRIOS & CONTROLES */
+    .input-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    input, select, button {
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid var(--cyan-dim);
+      background: #1f293d;
+      color: #fff;
+      outline: none;
+    }
+
+    input[type="text"], input[type="time"], select {
+      flex: 1;
+    }
+
+    button {
+      background: var(--cyan-dim);
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+      border: none;
+    }
+
+    button:hover {
+      background: var(--cyan-glow);
+      color: #000;
+    }
+
+    .btn-spotify {
+      background: #1DB954;
+      color: white;
+      width: 100%;
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-spotify:hover {
+      background: #1ed760;
+      color: white;
+    }
+
+    /* LISTAS */
+    ul {
+      list-style: none;
+    }
+
+    li {
+      background: #1f293d;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .delete-btn {
+      background: var(--danger);
+      padding: 4px 8px;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>J.A.R.V.I.S. Protocol</h1>
+    <p style="color: #888; font-size: 0.85rem;">Sistema de Gestão de Treino e Saúde</p>
+  </header>
+
+  <!-- INTERFACE CENTRAL DE VOZ (ARC REACTOR) -->
+  <div class="jarvis-container">
+    <div class="arc-reactor" id="arcReactor" onclick="alternarEscuta()">
+      <div class="arc-inner"></div>
+    </div>
+    <div class="status-text" id="statusText">Clique no Reator Arc para falar com o J.A.R.V.I.S.</div>
+  </div>
+
+  <div class="dashboard">
+
+    <!-- METAS E MODO DE TREINO -->
+    <div class="card">
+      <h2>🎯 Definição de Metas & Ambiente</h2>
+      <div class="input-group">
+        <select id="ambienteTreino">
+          <option value="Academia">Modo: Academia (Pesos e Cargas)</option>
+          <option value="Casa">Modo: Em Casa (Calistenia e Funcional)</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <input type="text" id="metaInput" placeholder="Ex: Perder 5kg, Treinar 4x por semana">
+        <button onclick="definirMeta()">Salvar Meta</button>
+      </div>
+      <p id="metaAtualText" style="font-size: 0.9rem; color: #aaa;">Nenhuma meta definida.</p>
+    </div>
+
+    <!-- AGENDADOR DE ALARMES / HORÁRIOS -->
+    <div class="card">
+      <h2>⏰ Lembretes e Despertador de Treino</h2>
+      <div class="input-group">
+        <input type="text" id="descricaoAlarme" placeholder="Ex: Treino de Peito em Casa">
+        <input type="time" id="horaAlarme">
+        <button onclick="adicionarAlarme()">Agendar</button>
+      </div>
+      <ul id="listaAlarmes"></ul>
+    </div>
+
+    <!-- INTEGRAÇÃO MUSIC & SPOTIFY -->
+    <div class="card">
+      <h2>🎵 Mídia e Motivação</h2>
+      <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 10px;">
+        Diga <b>"Tocar música de treino"</b> ou utilize o atalho abaixo:
+      </p>
+      <button class="btn-spotify" onclick="abrirSpotify('workout music')">
+        ▶ Abrir Playlist de Treino no Spotify
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    // ESTADO DA APLICAÇÃO
+    let alarmes = [];
+    let metaAtual = "";
+    let reconhecendo = false;
+
+    // CONFIGURAÇÃO DA SÍNTESE DE VOZ (J.A.R.V.I.S.)
+    const synth = window.speechSynthesis;
+    
+    function falarJarvis(texto) {
+      if (synth.speaking) synth.cancel();
+
+      const statusText = document.getElementById('statusText');
+      const reactor = document.getElementById('arcReactor');
+
+      statusText.innerText = `J.A.R.V.I.S.: "${texto}"`;
+      reactor.classList.add('speaking');
+
+      const utterance = new SpeechSynthesisUtterance(texto);
+      utterance.lang = 'pt-BR';
+      utterance.rate = 0.95; // Tom cadenciado e calmo
+      utterance.pitch = 0.8; // Tom mais grave para lembrar o J.A.R.V.I.S.
+
+      utterance.onend = () => {
+        reactor.classList.remove('speaking');
+        statusText.innerText = "Aguardando seu comando...";
+      };
+
+      synth.speak(utterance);
+    }
+
+    // CONFIGURAÇÃO DO RECONHECIMENTO DE VOZ (ALEXA STYLE)
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+
+    if (SpeechRecognition) {
+      recognition = new SpeechRecognition();
+      recognition.lang = 'pt-BR';
+      recognition.continuous = false;
+
+      recognition.onstart = () => {
+        reconhecendo = true;
+        document.getElementById('arcReactor').classList.add('listening');
+        document.getElementById('statusText').innerText = "Escutando comandos...";
+      };
+
+      recognition.onresult = (event) => {
+        const comando = event.results[0][0].transcript.toLowerCase();
+        processarComando(comando);
+      };
+
+      recognition.onend = () => {
+        reconhecendo = false;
+        document.getElementById('arcReactor').classList.remove('listening');
+      };
+    } else {
+      alert("Navegador não suporta reconhecimento de voz direto. Recomenda-se o uso do Google Chrome.");
+    }
+
+    function alternarEscuta() {
+      if (!recognition) return;
+      if (reconhecendo) {
+        recognition.stop();
+      } else {
+        recognition.start();
+      }
+    }
+
+    // PROCESSAMENTO DE COMANDOS DE VOZ
+    function processarComando(comando) {
+      document.getElementById('statusText').innerText = `Você falou: "${comando}"`;
+
+      if (comando.includes("música") || comando.includes("spotify")) {
+        falarJarvis("Iniciando playlist motivacional no Spotify agora mesmo, Senhor.");
+        abrirSpotify("workout playlist");
+      } 
+      else if (comando.includes("treino em casa") || comando.includes("casa")) {
+        document.getElementById('ambienteTreino').value = "Casa";
+        falarJarvis("Modo de treino em casa ativado. Sugiro exercícios de calistenia, polichinelos e flexões.");
+      } 
+      else if (comando.includes("academia")) {
+        document.getElementById('ambienteTreino').value = "Academia";
+        falarJarvis("Modo academia selecionado. Não se esqueça de registrar as cargas e respeitar os tempos de descanso.");
+      } 
+      else if (comando.includes("meta")) {
+        falarJarvis(metaAtual ? `Sua meta atual é: ${metaAtual}` : "Você ainda não definiu nenhuma meta, Senhor.");
+      }
+      else if (comando.includes("horas") || comando.includes("horário")) {
+        const agora = new Date();
+        falarJarvis(`Agora são exatamente ${agora.getHours()} horas e ${agora.getMinutes()} minutos.`);
+      }
+      else {
+        falarJarvis("Comando recebido, Senhor. Estou ajustando os parâmetros do seu sistema de treino.");
+      }
+    }
+
+    // MÉTODOS DE MANIPULAÇÃO DA INTERFACE
+    function definirMeta() {
+      const input = document.getElementById('metaInput');
+      if (input.value.trim() !== "") {
+        metaAtual = input.value;
+        document.getElementById('metaAtualText').innerText = `Meta: ${metaAtual}`;
+        falarJarvis(`Meta registrada com sucesso: ${metaAtual}`);
+        input.value = "";
+      }
+    }
+
+    function adicionarAlarme() {
+      const desc = document.getElementById('descricaoAlarme').value;
+      const hora = document.getElementById('horaAlarme').value;
+
+      if (!desc || !hora) {
+        alert("Preencha a descrição e o horário!");
+        return;
+      }
+
+      const alarme = { id: Date.now(), desc, hora };
+      alarmes.push(alarme);
+      atualizarListaAlarmes();
+      falarJarvis(`Alarme configurado para as ${hora}.`);
+
+      document.getElementById('descricaoAlarme').value = "";
+      document.getElementById('horaAlarme').value = "";
+    }
+
+    function atualizarListaAlarmes() {
+      const ul = document.getElementById('listaAlarmes');
+      ul.innerHTML = "";
+      alarmes.forEach(a => {
+        ul.innerHTML += `
+          <li>
+            <span>⏰ <b>${a.hora}</b> - ${a.desc}</span>
+            <button class="delete-btn" onclick="removerAlarme(${a.id})">Remover</button>
+          </li>
+        `;
+      });
+    }
+
+    function removerAlarme(id) {
+      alarmes = alarmes.filter(a => a.id !== id);
+      atualizarListaAlarmes();
+    }
+
+    function abrirSpotify(termo) {
+      const url = `https://open.spotify.com/search/${encodeURIComponent(termo)}`;
+      window.open(url, '_blank');
+    }
+
+    // SISTEMA CONTINUO DE CHECAGEM DE ALARMES / DESPERTADOR
+    setInterval(() => {
+      const agora = new Date();
+      const horaAtual = `${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}`;
+      
+      alarmes.forEach((a, index) => {
+        if (a.hora === horaAtual && !a.tocado) {
+          a.tocado = true;
+          falarJarvis(`Atenção, Senhor! Hora do seu compromisso: ${a.desc}`);
+          alert(`⏰ J.A.R.V.I.S. ALARME: ${a.desc}`);
+        }
+      });
+    }, 10000); // Checa a cada 10 segundos
+  </script>
+</body>
+</html>
