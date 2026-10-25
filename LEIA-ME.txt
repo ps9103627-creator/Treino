@@ -1,0 +1,26 @@
+MEU TREINO EM CASA - APLICATIVO (PWA)
+
+Esta pasta é um app instalável. Ele precisa ficar em um endereço HTTPS (ou localhost) para o
+navegador permitir "Instalar" e lembrar a permissão do microfone.
+
+1) HOSPEDAR (grátis) - o jeito mais simples, serve para computador e celular
+   - Netlify Drop: acesse app.netlify.com/drop e arraste esta pasta inteira. Você recebe um link https.
+   - Ou GitHub Pages / Cloudflare Pages / Vercel (envie os arquivos desta pasta).
+   NÃO envie o arquivo de backup (treino-config.js) para o site: ele contém a sua chave.
+
+2) INSTALAR
+   - Computador (Chrome ou Edge): abra o link e clique no ícone de instalar na barra de endereço
+     (ou menu ⋮ > Instalar "Meu Treino em Casa").
+   - Android (Chrome): menu ⋮ > Instalar app (ou Adicionar à tela inicial).
+   - iPhone/iPad (Safari): botão Compartilhar > Adicionar à Tela de Início.
+     Atenção: no iPhone o reconhecimento de voz costuma NÃO funcionar em app instalado.
+     Se precisar de voz, use o Safari normal.
+
+3) TESTAR NO PRÓPRIO COMPUTADOR (sem hospedar)
+   - Nesta pasta, rode: python3 -m http.server 8000   (ou python -m http.server 8000 no Windows)
+   - Abra http://localhost:8000 no Chrome ou Edge e instale pelo ícone da barra de endereço.
+
+4) CHAVE DA IA
+   - Abra o app > Configurar IA > cole a chave grátis do Google (aistudio.google.com/apikey) > Salvar.
+   - Depois clique em "Baixar backup" e guarde o arquivo no seu aparelho. Se perder os dados,
+     use "Restaurar backup".
