@@ -86,7 +86,7 @@ select.per{width:auto;font-size:.85rem;font-weight:600;padding:5px 6px}
   <div id="ytbox" style="margin-top:8px"></div>
   <div id="chat"></div>
   <div class="row" style="margin-top:8px"><button class="btn" id="mic" title="Falar">🎤</button><input type="text" id="inp" placeholder="Digite, ou diga “Treino” e fale…" style="flex:1"><button class="btn p" id="send">Enviar</button></div>
-  <div class="row" style="margin-top:8px;gap:14px"><label class="o"><input type="checkbox" id="vz" checked> Responder em voz</label><label class="o"><input type="checkbox" id="alw" checked> 🎙️ Escuta ativa — só reajo quando você disser “Treino”</label></div>
+  <div class="row" style="margin-top:8px;gap:14px"><label class="o"><input type="checkbox" id="vz" checked> Responder em voz</label><label class="o"><input type="checkbox" id="alw"> 🎙️ Escuta ativa — só reajo quando você disser “Treino”</label></div>
   <div class="muted" id="vst" style="margin-top:6px"></div>
   <div class="muted" id="fwarn" style="margin-top:4px" hidden>⚠️ Você abriu o arquivo direto do disco (file://). Nesse modo o navegador pede o microfone toda hora. Para parar de pedir, abra por <b>http://localhost:8000</b> (use o iniciar-treino.bat/.sh) ou hospede o arquivo em um site https.</div>
   <details style="margin-top:8px"><summary class="muted">🔊 Voz do assistente</summary>
@@ -191,33 +191,40 @@ $("#inp").addEventListener("keydown",e=>{if(e.key==="Enter")send()});
 $("#send").onclick=send;
 /* Voz: reconhecimento + fala */
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-let rec=null,always=false,manual=false,speaking=false,lastTx="",lastTxT=0,lastStart=0,rDelay=300;
+let rec=null,always=false,manual=false,speaking=false,lastTx="",lastTxT=0,lastStart=0,rDelay=300,micOK=false;
 function setMic(){const w=awaitCmd;$("#mic").classList.toggle("on",w);$("#vst").textContent=!always?"🔇 Microfone desligado. Toque no 🎤 para ligar a escuta.":(w?"🟢 Ativo — pode falar o seu pedido.":"😴 Em espera — diga “Treino” para me ativar.")}
 function mkRec(){if(!SR)return null;const r=new SR();r.lang="pt-BR";r.interimResults=false;r.continuous=true;
  r.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++){if(!e.results[i].isFinal)continue;const tx=e.results[i][0].transcript.trim(),now=Date.now();if(tx===lastTx&&now-lastTxT<2000)continue;lastTx=tx;lastTxT=now;handleVoice(tx)}};
- r.onerror=e=>{if(e.error==="not-allowed"||e.error==="service-not-allowed"){always=false;$("#alw").checked=false;setMic();$("#vst").textContent="Microfone bloqueado. Libere a permissão do microfone no navegador ou abra a página em uma aba própria."}};
- r.onend=()=>{setMic();const dt=Date.now()-lastStart;rDelay=dt<3000?Math.min(rDelay*2,10000):300;if(always&&!speaking)setTimeout(()=>startRec(false),rDelay)};
+ r.onerror=e=>{const er=e.error;const stop=m=>{always=false;awaitCmd=false;$("#alw").checked=false;setMic();$("#vst").textContent=m};
+  if(er==="not-allowed"||er==="service-not-allowed")stop("🚫 Microfone bloqueado. Toque no cadeado 🔒 da barra de endereço, permita o Microfone e recarregue a página.");
+  else if(er==="audio-capture")stop("🎤 Nenhum microfone encontrado ou ele está em uso por outro app.");
+  else if(er==="network")stop("🌐 O serviço de voz do navegador não respondeu (sem internet, ou navegador sem suporte como Brave/Firefox). Use Chrome ou Edge com internet.");
+  else if(er==="language-not-supported")stop("Idioma de voz não suportado neste navegador.")};
+ r.onend=()=>{setMic();const dt=Date.now()-lastStart;rDelay=dt<3000?Math.min(rDelay*2,5000):300;if(always&&!speaking)setTimeout(()=>startRec(false),rDelay)};
  return r}
-function startRec(m){if(!SR){$("#vst").textContent="Seu navegador não suporta reconhecimento de voz. Use Chrome, Edge ou Safari.";return}
+async function startRec(m){if(!SR){$("#vst").textContent="Seu navegador não suporta reconhecimento de voz. Use Chrome ou Edge.";always=false;$("#alw").checked=false;return}
+ if(!micOK&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
+  try{const st=await navigator.mediaDevices.getUserMedia({audio:true});st.getTracks().forEach(t=>t.stop());micOK=true}
+  catch(e){always=false;$("#alw").checked=false;setMic();$("#vst").textContent=(e&&e.name==="NotFoundError")?"🎤 Nenhum microfone encontrado neste aparelho.":"🚫 Microfone bloqueado. Toque no cadeado 🔒 da barra de endereço, permita o Microfone e recarregue a página.";return}}
  rec=rec||mkRec();manual=false;lastStart=Date.now();try{rec.start();setMic()}catch(e){}}
 let awaitCmd=false;
 let wakeT=null;
 function sleepMic(){awaitCmd=false;clearTimeout(wakeT);setMic()}
 function greet(){const g="Olá senhor, o que você precisa?";bubble("b",g);awaitCmd=true;setMic();clearTimeout(wakeT);wakeT=setTimeout(sleepMic,15000);speak(g,true)}
-function handleVoice(t){if(!t)return;
+function showHeard(t){let h=$("#heard");if(!h){h=document.createElement("div");h.id="heard";h.className="muted";$("#vst").after(h)}h.textContent="👂 Ouvi: “"+t+"”"}
+function handleVoice(t){if(!t)return;showHeard(t);
  /* Em espera: tudo que não começar com "Treino" é descartado. */
  if(awaitCmd){sleepMic();$("#inp").value=t;send();return}
- const m=t.match(/^(ei |oi |ok )?treino[,.!? ]*(.*)$/i);
+ const m=t.match(/^(?:ei |oi |ok |olá )?(?:treino|treinou|treinos)\b[,.!? ]*(.*)$/i);
  if(!m)return;
- if(!m[2]){greet();return}
- $("#inp").value=m[2];send()}
+ if(!m[1]){greet();return}
+ $("#inp").value=m[1];send()}
 function speak(t,force){if((!force&&!$("#vz").checked)||!window.speechSynthesis)return;
  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(t).replace(/https?:\S+/g,""));u.lang="pt-BR";applyVz(u);
   u.onstart=()=>{speaking=true;if(rec)try{rec.abort()}catch(e){}};
-  const fim=()=>{speaking=false;if(always||awaitCmd)setTimeout(()=>startRec(false),300)};u.onend=fim;u.onerror=fim;speechSynthesis.speak(u)}catch(e){}}
-$("#mic").onclick=()=>{try{speechSynthesis.cancel()}catch(e){}const c=$("#alw");c.checked=!c.checked;c.onchange({target:c})};
+  let done=false;const fim=()=>{if(done)return;done=true;speaking=false;if(always||awaitCmd)setTimeout(()=>startRec(false),300)};u.onend=fim;u.onerror=fim;speechSynthesis.speak(u);setTimeout(fim,Math.max(5000,String(t).length*110))}catch(e){}}
+$("#mic").onclick=()=>{try{speechSynthesis.cancel()}catch(e){}const c=$("#alw");c.checked=!always;c.onchange({target:c})};
 $("#alw").onchange=e=>{always=e.target.checked;if(always)startRec(false);else{sleepMic();if(rec)try{rec.abort()}catch(x){}}};
-document.addEventListener("pointerdown",()=>{if($("#alw").checked&&!always)setTimeout(()=>{if($("#alw").checked&&!always){always=true;startRec(false)}},50)},{once:true});
 setMic();if(location.protocol==="file:")$("#fwarn").hidden=false;
 /* Escolha de voz */
 const VZ={name:"",rate:1,pitch:1};
