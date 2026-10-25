@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>J.A.R.V.I.S. AI Fitness System</title>
+  <style>
+    :root {
+      --bg-color: #0b0f19;
+      --card-bg: #111827;
+      --cyan-glow: #00f0ff;
+      --cyan-dim: #008b9b;
+      --text-color: #e2e8f0;
+      --danger: #ef4444;
+      --success: #38ef7d;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    header h1 {
+      color: var(--cyan-glow);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-size: 1.6rem;
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+    }
+
+    /* REATOR ARC / VOZ */
+    .jarvis-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 25px;
+    }
+
+    .arc-reactor {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 4px solid var(--cyan-glow);
+      box-shadow: 0 0 20px var(--cyan-glow), inset 0 0 15px var(--cyan-glow);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .arc-reactor.listening {
+      border-color: var(--success);
+      box-shadow: 0 0 35px var(--success), inset 0 0 20px var(--success);
+      animation: pulse 1.2s infinite alternate;
+    }
+
+    .arc-reactor.speaking {
+      border-color: #f39c12;
+      box-shadow: 0 0 35px #f39c12, inset 0 0 20px #f39c12;
+    }
+
+    .arc-inner {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(0, 240, 255, 0.2);
+      border: 2px dashed var(--cyan-glow);
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.08); }
+    }
+
+    .status-text {
+      margin-top: 10px;
+      font-size: 0.85rem;
+      color: var(--cyan-glow);
+      text-align: center;
+      min-height: 20px;
+      max-width: 400px;
+    }
+
+    /* DASHBOARD LAYOUT */
+    .dashboard {
+      width: 100%;
+      max-width: 600px;
+      display: grid;
+      gap: 15px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      color: var(--cyan-glow);
+      margin-bottom: 12px;
+      border-bottom: 1px solid rgba(0,240,255,0.1);
+      padding-bottom: 6px;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    input, select, button {
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--cyan-dim);
+      background: #1f293d;
+      color: #fff;
+      outline: none;
+      font-size: 0.9rem;
+    }
+
+    input[type="text"], input[type="number"], select {
+      flex: 1;
+    }
+
+    button {
+      background: var(--cyan-dim);
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+      border: none;
+    }
+
+    button:hover {
+      background: var(--cyan-glow);
+      color: #000;
+    }
+
+    /* CRONÔMETRO */
+    .timer-display {
+      font-size: 2rem;
+      text-align: center;
+      color: var(--success);
+      font-weight: bold;
+      margin: 10px 0;
+      text-shadow: 0 0 10px rgba(56, 239, 125, 0.4);
+    }
+
+    .timer-controls {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    /* LISTAS E FICHAS */
+    ul {
+      list-style: none;
+    }
+
+    li {
+      background: #1f293d;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+    }
+
+    .badge {
+      background: rgba(0, 240, 255, 0.15);
+      color: var(--cyan-glow);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .btn-spotify {
+      background: #1DB954;
+      color: white;
+      width: 100%;
+      margin-top: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>J.A.R.V.I.S. Protocol</h1>
+    <p style="color: #888; font-size: 0.8rem;">Inteligência Artificial de Treino & Voz</p>
+  </header>
+
+  <!-- REATOR ARC / VOZ -->
+  <div class="jarvis-container">
+    <div class="arc-reactor" id="arcReactor" onclick="alternarEscuta()">
+      <div class="arc-inner"></div>
+    </div>
+    <div class="status-text" id="statusText">Clique para ligar o J.A.R.V.I.S. ou diga "Jarvis"</div>
+  </div>
+
+  <div class="dashboard">
+
+    <!-- FICHAS DE TREINO -->
+    <div class="card">
+      <h2>📋 Fichas de Treino Inteligentes</h2>
+      <div class="input-group">
+        <select id="seletorTreino" onchange="carregarTreino()">
+          <option value="academia">Academia (Peito e Tríceps)</option>
+          <option value="casa">Em Casa (Calistenia Funcional)</option>
+        </select>
+      </div>
+      <ul id="listaExercicios"></ul>
+    </div>
+
+    <!-- CRONÔMETRO & CARGAS -->
+    <div class="card">
+      <h2>⏱ Cronômetro & Registro de Carga</h2>
+      <div class="timer-display" id="timerDisplay">00:60</div>
+      <div class="timer-controls">
+        <button onclick="iniciarCronometro(60)">Descanso 1m</button>
+        <button onclick="iniciarCronometro(30)">Descanso 30s</button>
+        <button onclick="pararCronometro()" style="background: var(--danger);">Parar</button>
+      </div>
+      
+      <div style="margin-top: 15px; border-top: 1px solid rgba(0,240,255,0.1); padding-top: 10px;">
+        <div class="input-group">
+          <input type="text" id="exercicioNome" placeholder="Nome do Exercício">
+          <input type="number" id="cargaValor" placeholder="Carga (kg)" style="max-width: 90px;">
+          <button onclick="salvarCarga()">Salvar</button>
+        </div>
+        <ul id="historicoCargas" style="margin-top: 8px;"></ul>
+      </div>
+    </div>
+
+    <!-- METAS E SPOTIFY -->
+    <div class="card">
+      <h2>🎯 Metas & Mídia</h2>
+      <div class="input-group">
+        <input type="text" id="metaInput" placeholder="Ex: Treinar 4x na semana">
+        <button onclick="definirMeta()">Definir</button>
+      </div>
+      <p id="metaAtualText" style="font-size: 0.85rem; color: #aaa; margin-bottom: 10px;">Nenhuma meta ativa.</p>
+      <button class="btn-spotify" onclick="tocarSpotify('playlist de treino')">▶ Tocar Música no Spotify</button>
+    </div>
+
+  </div>
+
+  <script>
+    const treinos = {
+      academia: [
+        { nome: "Supino Reto com Barra", series: "4x 10 repetições" },
+        { nome: "Supino Inclinado com Halteres", series: "3x 12 repetições" },
+        { nome: "Tríceps Pulley na Polia", series: "4x 15 repetições" },
+        { nome: "Desenvolvimento com Halteres", series: "3x 10 repetições" }
+      ],
+      casa: [
+        { nome: "Flexão de Braço Tradicional", series: "4x Máximo" },
+        { nome: "Agachamento Livre com Salto", series: "4x 15 repetições" },
+        { nome: "Prancha Abdominal Isométrica", series: "3x 45 segundos" },
+        { nome: "Polichinelos", series: "3x 1 minuto" }
+      ]
+    };
+
+    let cronometroInterval = null;
+    let cargasSalvas = JSON.parse(localStorage.getItem('jarvis_cargas')) || [];
+    let metaAtual = localStorage.getItem('jarvis_meta') || "";
+
+    const synth = window.speechSynthesis;
+    
+    function falarJarvis(texto, callback) {
+      if (synth.speaking) synth.cancel();
+      const statusText = document.getElementById('statusText');
+      const reactor = document.getElementById('arcReactor');
+
+      statusText.innerText = `J.A.R.V.I.S.: "${texto}"`;
+      reactor.classList.add('speaking');
+
+      const utterance = new SpeechSynthesisUtterance(texto);
+      utterance.lang = 'pt-BR';
+      utterance.rate = 0.95;
+      utterance.pitch = 0.8; // Tom grave estilo J.A.R.V.I.S.
+
+      utterance.onend = () => {
+        reactor.classList.remove('speaking');
+        if (callback) callback();
+      };
+      synth.speak(utterance);
+    }
+
+    // RECONHECIMENTO DE VOZ INTELIGENTE E CONTÍNUO
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let reconhecendo = false;
+    let aguardandoComando = false;
+
+    if (SpeechRecognition) {
+      recognition = new SpeechRecognition();
+      recognition.lang = 'pt-BR';
+      recognition.continuous = true; // Permite ficar ouvindo direto
+      recognition.interimResults = false;
+
+      recognition.onstart = () => {
+        reconhecendo = true;
+        document.getElementById('arcReactor').classList.add('listening');
+        document.getElementById('statusText').innerText = "J.A.R.V.I.S. ativado e ouvindo...";
+      };
+
+      recognition.onresult = (event) => {
+        const ultimaFalada = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
+        document.getElementById('statusText').innerText = `Você disse: "${ultimaFalada}"`;
+        
+        processarFalaJarvis(ultimaFalada);
+      };
+
+      recognition.onerror = (event) => {
+        console.log("Erro no reconhecimento: ", event.error);
+      };
+
+      recognition.onend = () => {
+        reconhecendo = false;
+        document.getElementById('arcReactor').classList.remove('listening');
+        // Reinicia automaticamente se cair para simular assistente real
+        try {
+          if (document.hidden === false) recognition.start();
+        } catch(e) {}
+      };
+    }
+
+    function alternarEscuta() {
+      if (!recognition) return alert("Seu navegador não suporta reconhecimento de voz.");
+      if (reconhecendo) {
+        recognition.stop();
+        document.getElementById('statusText').innerText = "J.A.R.V.I.S. pausado.";
+      } else {
+        aguardandoComando = false;
+        recognition.start();
+      }
+    }
+
+    function processarFalaJarvis(fala) {
+      // Se falar a palavra chave "Jarvis"
+      if (!aguardandoComando && (fala.includes("jarvis") || fala.includes("charles") || fala.includes("darvis"))) {
+        aguardandoComando = true;
+        falarJarvis("Olá senhor, o que você precisa?");
+        return;
+      }
+
+      // Se ele já chamou o Jarvis, executa a ação correspondente
+      if (aguardandoComando || fala.includes("tocar") || fala.includes("spotify") || fala.includes("música")) {
+        aguardandoComando = false;
+
+        if (fala.includes("música") || fala.includes("spotify") || fala.includes("tocar")) {
+          // Extrai o que o usuário quer tocar após a palavra "tocar" ou "música"
+          let termoMusica = "playlist de treino motivacional";
+          if (fala.includes("tocar ")) {
+            termoMusica = fala.split("tocar ")[1];
+          } else if (fala.includes("música de ")) {
+            termoMusica = fala.split("música de ")[1];
+          }
+          
+          falarJarvis(`Tocando ${termoMusica} no Spotify, Senhor.`);
+          tocarSpotify(termoMusica);
+        } 
+        else if (fala.includes("descanso") || fala.includes("cronômetro")) {
+          iniciarCronometro(60);
+          falarJarvis("Cronômetro de 60 segundos ativado, Senhor.");
+        } 
+        else if (fala.includes("academia")) {
+          document.getElementById('seletorTreino').value = 'academia';
+          carregarTreino();
+          falarJarvis("Modo academia carregado com sucesso.");
+        } 
+        else if (fala.includes("casa")) {
+          document.getElementById('seletorTreino').value = 'casa';
+          carregarTreino();
+          falarJarvis("Ficha de treino em casa ativada.");
+        } 
+        else if (fala.includes("agachamento") || fala.includes("como fazer")) {
+          falarJarvis("Mantenha a coluna reta, jogue o quadril para trás como se fosse sentar numa cadeira e desça até os joelhos formarem 90 graus.");
+        }
+        else if (fala.includes("comer") || fala.includes("dieta")) {
+          falarJarvis("Para o pré-treino, recomendo carboidratos de rápida digestão, como uma fruta com aveia.");
+        }
+        else {
+          falarJarvis(`Entendido, Senhor. Ajustando os parâmetros do sistema para ${fala}.`);
+        }
+      }
+    }
+
+    function tocarSpotify(termo) {
+      // Abre a busca direta no Spotify Web/App para iniciar a reprodução instantânea
+      const urlSpotify = `https://open.spotify.com/search/${encodeURIComponent(termo)}`;
+      window.open(urlSpotify, '_blank');
+    }
+
+    function carregarTreino() {
+      const tipo = document.getElementById('seletorTreino').value;
+      const ul = document.getElementById('listaExercicios');
+      ul.innerHTML = "";
+      treinos[tipo].forEach(ex => {
+        ul.innerHTML += `<li><span>${ex.nome}</span> <span class="badge">${ex.series}</span></li>`;
+      });
+    }
+
+    function iniciarCronometro(segundos) {
+      pararCronometro();
+      let tempoRestante = segundos;
+      atualizarDisplayTimer(tempoRestante);
+
+      cronometroInterval = setInterval(() => {
+        tempoRestante--;
+        atualizarDisplayTimer(tempoRestante);
+        if (tempoRestante <= 0) {
+          pararCronometro();
+          falarJarvis("Tempo esgotado, Senhor. Retorne à sua série imediatamente!");
+        }
+      }, 1000);
+    }
+
+    function pararCronometro() {
+      if (cronometroInterval) clearInterval(cronometroInterval);
+    }
+
+    function atualizarDisplayTimer(sec) {
+      const min = Math.floor(sec / 60);
+      const s = sec % 60;
+      document.getElementById('timerDisplay').innerText = `${String(min).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+
+    function salvarCarga() {
+      const nome = document.getElementById('exercicioNome').value.trim();
+      const carga = document.getElementById('cargaValor').value.trim();
+      if (!nome || !carga) return alert("Preencha o exercício e a carga!");
+
+      cargasSalvas.push({ nome, carga, data: new Date().toLocaleDateString() });
+      localStorage.setItem('jarvis_cargas', JSON.stringify(cargasSalvas));
+      document.getElementById('exercicioNome').value = "";
+      document.getElementById('cargaValor').value = "";
+      atualizarHistoricoCargas();
+      falarJarvis(`Carga de ${carga} quilos registrada para ${nome}.`);
+    }
+
+    function atualizarHistoricoCargas() {
+      const ul = document.getElementById('historicoCargas');
+      ul.innerHTML = "";
+      cargasSalvas.slice(-4).reverse().forEach(item => {
+        ul.innerHTML += `<li><span>🏋️‍♂️ ${item.nome}</span> <span class="badge">${item.carga} kg</span></li>`;
+      });
+    }
+
+    function definirMeta() {
+      const input = document.getElementById('metaInput').value.trim();
+      if (input) {
+        metaAtual = input;
+        localStorage.setItem('jarvis_meta', metaAtual);
+        document.getElementById('metaAtualText').innerText = `Meta: ${metaAtual}`;
+        falarJarvis("Nova meta salva com sucesso.");
+        document.getElementById('metaInput').value = "";
+      }
+    }
+
+    window.onload = () => {
+      carregarTreino();
+      atualizarHistoricoCargas();
+      if (metaAtual) document.getElementById('metaAtualText').innerText = `Meta: ${metaAtual}`;
+    };
+  </script>
+</body>
+</html>
